@@ -1,0 +1,27 @@
+# When you need to reset the (BMC/IPMI) ADMIN password on a supermicro motherboard, you can do this from the CLI
+# The default "ADMIN" user is always number 2. I guess number 2 works for you.
+ipmitool -I open user set password 2 <password>
+
+
+# It's not always straightforward on pulling HDD sensor data and sometimes you'll need to extract this from SMART
+#!/bin/bash
+for i in $(sysctl -n kern.disks)
+do
+  DevTemps=`smartctl -a /dev/$i | awk '/Current Drive Temperature/{print $4}' | awk '{print $0 "C"}'`
+  echo $i $DevTemp
+done
+
+
+# Use raw IPMI commands to set the fans to full speed.
+# This is sometimes needed if you'll be setting them lower afterwards.
+/usr/bin/ipmitool raw 0x30 0x45 0x01 0x01
+/usr/bin/ipmitool raw 0x30 0x91 0x5A 0x3 0x10 0x4c #30%
+#/usr/bin/ipmitool raw 0x30 0x91 0x5A 0x3 0x10 0x33 #20%
+#/usr/bin/ipmitool raw 0x30 0x91 0x5A 0x3 0x10 0x56 #33%
+
+
+# If you need to pull Current CPU Core Temps from the CLI
+sysctl -a | egrep -E "cpu\.[0-9]+\.temp"
+
+
+
